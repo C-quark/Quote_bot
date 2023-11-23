@@ -14,8 +14,8 @@ STICKER_HEIGHT = 512
 STICKER_WIGHT = 512
 FONT_HEIGHT_TEXT = 24
 FONT_HEIGHT_NAME = 30
-WIGHT_TEXT_MAX = 23 #26 для montserrat-regular
-WIGHT_NAME_MAX = 19 #20 для montserrat-regular
+WIGHT_TEXT_MAX = 26
+WIGHT_NAME_MAX = 20
 INDENT = 20
 LINE_HEIGHT_NAME = 30
 LINE_HEIGHT_TEXT = 27
@@ -24,12 +24,10 @@ LINE_HEIGHT_TEXT = 27
 
 @bot.message_handler(commands = ['q'])
 def send_sticker(message):
-    #print(message)
     if message.reply_to_message and hasattr(message.reply_to_message, 'forward_from') and message.reply_to_message.forward_from:
         profile_photos = bot.get_user_profile_photos(message.reply_to_message.forward_from.id, limit=1)
     elif message.reply_to_message and hasattr(message.reply_to_message, 'forward_sender_name') and message.reply_to_message.forward_sender_name:
         profile_photos = None
-    #elif message.reply_to_message and message.reply_to_message.from_user: #and hasattr(message.reply_to_message.forward_from, 'None') and hasattr(message.reply_to_message.forward_sender_name, 'None')
     elif message.reply_to_message and message.reply_to_message.from_user:
         profile_photos = bot.get_user_profile_photos(message.reply_to_message.from_user.id, limit=1)
     else:
@@ -66,31 +64,53 @@ def send_sticker(message):
         wrapped_name_wrap = textwrap.wrap(message.reply_to_message.from_user.first_name, width=WIGHT_NAME_MAX)
         wrapped_text_wrap = textwrap.wrap(message.reply_to_message.text, width=WIGHT_TEXT_MAX)
     else:
-        print('Не удалось достать данные')
+        bot.reply_to(message, 'Не удалось сделать стикер')
         return
     height_rr_name = LINE_HEIGHT_NAME * len(wrapped_name_wrap) + INDENT
     height_rr_text = LINE_HEIGHT_TEXT * len(wrapped_text_wrap) + height_rr_name + INDENT
     image = Image.new('RGBA', (STICKER_WIGHT, height_rr_name+height_rr_text)) #color=(255, 140, 0)
     draw = ImageDraw.Draw(image)
-    font_name = ImageFont.truetype('montserrat-alternates-medium.ttf', size=FONT_HEIGHT_NAME)
-    font_text = ImageFont.truetype('montserrat-alternates-medium.ttf', size=FONT_HEIGHT_TEXT)
+    font_name = ImageFont.truetype('roboto-serif-8pt-medium.ttf', size=FONT_HEIGHT_NAME)
+    font_text = ImageFont.truetype('roboto-serif-8pt-medium.ttf', size=FONT_HEIGHT_TEXT)
     if avatar is not None:
         image.paste(avatar, (0, 0))
     elif avatar is None:
-        draw.ellipse((0, 0, (AVATAR_HEIGHT, AVATAR_WIGHT)), fill="#170F1F", width=1)
-    draw.rounded_rectangle((AVATAR_WIGHT + INDENT, 0, STICKER_HEIGHT, height_rr_text), radius=20, fill='#002137', width=1) #363636-серый, 1E1429-фиолетовый, 191731-синий, 121212-черный, 191919-темно-серый, 262626, 002F55, 343E40, 423C63, 26203C, 003841, 002137
-    draw.rounded_rectangle((AVATAR_WIGHT + INDENT, 0, STICKER_HEIGHT, height_rr_name), radius=20, fill='#001B2E', corners=(20, 20, 0, 0), width=1) #302f2f, 191122, 141226, 000000, 121212, 121212, 0E294B, 23282B, 373252, 1A162A, 003038, 001B2E
+        draw.ellipse((0, 0, (AVATAR_HEIGHT, AVATAR_WIGHT)), fill="#121212", width=1)
+    draw.rounded_rectangle((AVATAR_WIGHT + INDENT, 0, STICKER_HEIGHT, height_rr_text), radius=20, fill='#262626', width=1) #363636-серый, 1E1429-фиолетовый, 191731-синий, 121212-черный, 191919-темно-серый, 262626, 002F55, 343E40, 423C63, 26203C, 003841, 002137
+    draw.rounded_rectangle((AVATAR_WIGHT + INDENT, 0, STICKER_HEIGHT, height_rr_name), radius=20, fill='#121212', corners=(20, 20, 0, 0), width=1) #302f2f, 191122, 141226, 000000, 121212, 121212, 0E294B, 23282B, 373252, 1A162A, 003038, 001B2E
     draw.text((AVATAR_WIGHT + INDENT * 2, 60), wrapped_text_fill, fill="#E0FFFF", font=font_text)
     draw.text((AVATAR_WIGHT + INDENT * 2, 10), wrapped_name_fill, fill="#AFEEEE", font=font_name)
     image.save('sticker.png')
     if message.reply_to_message:
         with open('sticker.png', 'rb') as sticker:
             bot.send_sticker(message.chat.id, sticker)
-            #bot.register_next_step_handler(sticker, save_sticker)
 
-#@bot.message_handler(commands = ['add'])
-#def save_sticker(message, sticker):
-    #bot.add_sticker_to_set(user_id=message.from_user.id, name='Quotes_by_Quote_stick_bot', emojis=['\U00002712'], png_sticker=sticker)
+
+@bot.message_handler(commands=['add'])
+def save_sticker(message):
+    if message.reply_to_message and message.reply_to_message.sticker:
+        sticker_id = message.reply_to_message.sticker.file_id
+        bot.add_sticker_to_set(user_id=message.from_user.id, name='Quotes_by_Quote_stick_bot', emojis=['\U00002712'], png_sticker=sticker_id)
+        bot.reply_to(message, 'Стикер добавлен')
+    else:
+        bot.reply_to(message, 'Это не стикер')
+
+
+@bot.message_handler(commands=['del'])
+def del_sticker(message):
+    sticker_set = bot.get_sticker_set('Quotes_by_Quote_stick_bot')
+    if message.reply_to_message and message.reply_to_message.sticker:
+        sticker_id = message.reply_to_message.sticker.file_id
+        for sticker in sticker_set.stickers:
+            if sticker.file_id == sticker_id:
+                bot.delete_sticker_from_set(sticker=sticker_id)
+                bot.reply_to(message, 'Стикер удален')
+                return
+        else:
+            bot.reply_to(message, 'Данного стикера нет в паке')
+    else:
+        bot.reply_to(message, 'Это не стикер')
+
 
 if __name__ == '__main__':
      bot.infinity_polling()
