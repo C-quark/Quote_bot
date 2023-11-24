@@ -20,18 +20,22 @@ INDENT = 20
 LINE_HEIGHT_NAME = 30
 LINE_HEIGHT_TEXT = 27
 
-#bot.create_new_sticker_set(user_id=549883953, name='Quotes_by_Quote_stick_bot', title='Цитаты великих', emojis=['\U00002712'], png_sticker='CAACAgIAAxkBAAEBlPBlNsNj6thvlbFK6wL3cLdf3ggivwACPzEAAreicUlop3VNAid-FTAE')
+#bot.create_new_sticker_set(user_id=549883953, name='Quotes_by_Quote_stick_bot', title='Цитаты', emojis=['\U00002712'], png_sticker='')
 
 @bot.message_handler(commands = ['q'])
 def send_sticker(message):
-    if message.reply_to_message and hasattr(message.reply_to_message, 'forward_from') and message.reply_to_message.forward_from:
-        profile_photos = bot.get_user_profile_photos(message.reply_to_message.forward_from.id, limit=1)
-    elif message.reply_to_message and hasattr(message.reply_to_message, 'forward_sender_name') and message.reply_to_message.forward_sender_name:
-        profile_photos = None
-    elif message.reply_to_message and message.reply_to_message.from_user:
-        profile_photos = bot.get_user_profile_photos(message.reply_to_message.from_user.id, limit=1)
+    if message.reply_to_message.text:
+        if message.reply_to_message and hasattr(message.reply_to_message, 'forward_from') and message.reply_to_message.forward_from:
+            profile_photos = bot.get_user_profile_photos(message.reply_to_message.forward_from.id, limit=1)
+        elif message.reply_to_message and hasattr(message.reply_to_message, 'forward_sender_name') and message.reply_to_message.forward_sender_name:
+            profile_photos = None
+        elif message.reply_to_message and message.reply_to_message.from_user:
+            profile_photos = bot.get_user_profile_photos(message.reply_to_message.from_user.id, limit=1)
+        else:
+            profile_photos = None
     else:
-        profile_photos = None
+        bot.reply_to(message, 'Это не текст!')
+        return
     if profile_photos and len(profile_photos.photos) > 0:
         profile_photo = profile_photos.photos[0][-1]
         file_id = profile_photo.file_id
@@ -93,7 +97,7 @@ def save_sticker(message):
         bot.add_sticker_to_set(user_id=message.from_user.id, name='Quotes_by_Quote_stick_bot', emojis=['\U00002712'], png_sticker=sticker_id)
         bot.reply_to(message, 'Стикер добавлен')
     else:
-        bot.reply_to(message, 'Это не стикер')
+        bot.reply_to(message, 'Это не стикер, алло!')
 
 
 @bot.message_handler(commands=['del'])
@@ -107,9 +111,9 @@ def del_sticker(message):
                 bot.reply_to(message, 'Стикер удален')
                 return
         else:
-            bot.reply_to(message, 'Данного стикера нет в паке')
+            bot.reply_to(message, 'Данного стикера нет в паке, ты не видишь? Сходи к офтальмологу!')
     else:
-        bot.reply_to(message, 'Это не стикер')
+        bot.reply_to(message, 'Это не стикер, алло!')
 
 
 if __name__ == '__main__':
