@@ -14,7 +14,7 @@ STICKER_HEIGHT = 512
 STICKER_WIGHT = 512
 FONT_HEIGHT_TEXT = 24
 FONT_HEIGHT_NAME = 30
-WIGHT_TEXT_MAX = 26
+WIGHT_TEXT_MAX = 24
 WIGHT_NAME_MAX = 20
 INDENT = 20
 LINE_HEIGHT_NAME = 30
@@ -43,10 +43,10 @@ def send_sticker(message):
         file_path = file_info.file_path
         data = bot.download_file(file_path)
         avatar = Image.open(io.BytesIO(data))
-        avatar = avatar.resize((AVATAR_HEIGHT, AVATAR_WIGHT))
+        avatar = avatar.resize((AVATAR_WIGHT, AVATAR_HEIGHT))
         mask = Image.new('L', (101, 101), 0)
         draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0) + (AVATAR_HEIGHT, AVATAR_WIGHT), fill=255)
+        draw.ellipse((0, 0) + (AVATAR_WIGHT, AVATAR_HEIGHT), fill=255)
         avatar = ImageOps.fit(avatar, mask.size, centering=(0.5, 0.5))
         avatar.putalpha(mask)
         avatar.save('avatar.png')
@@ -84,7 +84,10 @@ def send_sticker(message):
     draw.rounded_rectangle((AVATAR_WIGHT + INDENT, 0, STICKER_HEIGHT, height_rr_name), radius=20, fill='#121212', corners=(20, 20, 0, 0), width=1) #302f2f, 191122, 141226, 000000, 121212, 121212, 0E294B, 23282B, 373252, 1A162A, 003038, 001B2E
     draw.text((AVATAR_WIGHT + INDENT * 2, 60), wrapped_text_fill, fill="#E0FFFF", font=font_text)
     draw.text((AVATAR_WIGHT + INDENT * 2, 10), wrapped_name_fill, fill="#AFEEEE", font=font_name)
-    image.save('sticker.png')
+    while image.size <= (STICKER_WIGHT, STICKER_HEIGHT):
+        image.resize((STICKER_WIGHT, STICKER_HEIGHT - (LINE_HEIGHT_TEXT + INDENT)))
+    else:
+        image.save('sticker.png')
     if message.reply_to_message:
         with open('sticker.png', 'rb') as sticker:
             bot.send_sticker(message.chat.id, sticker)
@@ -117,4 +120,4 @@ def del_sticker(message):
 
 
 if __name__ == '__main__':
-     bot.infinity_polling()
+    bot.infinity_polling()
