@@ -1,4 +1,5 @@
 import telebot
+from telebot.apihelper import ApiTelegramException
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from config import bot_token, CHATS
 import io
@@ -23,7 +24,25 @@ LINE_HEIGHT_NAME = 30
 LINE_HEIGHT_TEXT = 27
 INDENT = 20
 
-#bot.create_new_sticker_set(user_id=549883953, name='Quotes_by_Quote_stick_bot', title='Цитаты', emojis=['\U00002712'], png_sticker='')
+
+commands = '\n'.join([
+        '/q - создать стикер из текста',
+        '/add - добавить стикер в стикерпак',
+        '/del - удалить стикер',
+        '/packs - все стикерпаки',
+        '/main_pack - выбрать действующий стикерпак',
+        '/new_pack - создать стикерпак',
+        '/del_pack - удалить стикерпак'])
+
+
+@bot.message_handler(commands=['start'])
+def send_start(message):
+    bot.send_message(message.chat.id, 'Привет, кожаный')
+
+
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    bot.send_message(message.chat.id, commands)
 
 
 @bot.message_handler(commands=['q'])
@@ -99,7 +118,7 @@ def send_sticker(message):
 
 
 @bot.message_handler(commands=['add'])
-def save_sticker(message):
+def add_sticker(message):
     if message.reply_to_message and message.reply_to_message.sticker:
         sticker_id = message.reply_to_message.sticker.file_id
         bot.add_sticker_to_set(user_id=message.from_user.id, name='Quotes_by_Quote_stick_bot', emojis=['\U00002712'], png_sticker=sticker_id)
@@ -122,6 +141,62 @@ def del_sticker(message):
             bot.reply_to(message, 'Данного стикера нет в паке, ты не видишь? Сходи к офтальмологу')
     else:
         bot.reply_to(message, 'Это не стикер, алло!')
+
+
+@bot.message_handler(commands=['packs'])
+def send_packs(message):
+    with open('sticker_packs.txt', 'r') as packs:
+        bot.send_message(message.chat.id, '\n'.join(packs))
+
+
+@bot.message_handler(commands=['new_pack'])
+def new_pack(message):
+    result = bot.send_message(message.chat.id, 'Придумай нормальное название для стикеров')
+    bot.register_next_step_handler(result, new_name)
+
+
+def new_name(message):
+    name = message.text
+    try:
+        pack_name = name + '_by_Quote_stick_bot'
+        bot.create_new_sticker_set(user_id=549883953, name=pack_name, title='Цитаты', emojis=['\U00002712'], png_sticker='CAACAgIAAxkBAAECLLllZP3pitZmfcLkPaTqUuDDBQcMpwAClisAAmyCMEgrMpVOWbS9YTME')
+        bot.send_message(message.chat.id, 'Стикерпак создан')
+        with open('sticker_packs.txt', 'a') as file:
+            file.write('https://t.me/addstickers/' + pack_name)
+    except ApiTelegramException as e:
+        error_description = str(e)
+        if 'sticker set name is already occupied' in error_description.lower():
+            bot.send_message(message.chat.id, 'Это имя уже используется, включи фантазию')
+        elif 'invalid sticker set name is specified' in error_description.lower():
+            bot.send_message(message.chat.id, 'Используешь неправильные символы, кожаный')
+    except Exception:
+        bot.send_message(message.chat.id, f"Из-за тебя произошла ошибка: {Exception}")
+
+
+@bot.message_handler(commands=['del_pack'])
+def del_pack(message):
+    result = bot.send_message(message.chat.id, 'Какой из стикерпаков тебе вздумалось удалить?')
+    bot.register_next_step_handler(result, del_name)
+
+
+def del_name(message):
+    name = message.text
+    try:
+        pack_name = name + '_by_Quote_stick_bot'
+        bot.delete_sticker_set(pack_name)
+        bot.send_message(message.chat.id, 'Стикерпак удален')
+        with open('sticker_packs.txt', 'r') as file: #TODO: исправить удаление файла
+            link_name = 'https://t.me/addstickers/' + pack_name
+            file.read().replace(link_name, '')
+    except ApiTelegramException:
+        bot.send_message(message.chat.id, 'Не можешь правильно написать название стикерпака? У тебя лапки?')
+    except Exception:
+        bot.send_message(message.chat.id, f"Из-за тебя произошла ошибка: {Exception}")
+
+
+@bot.message_handler(commands=['main_pack'])
+def main_pack(message):
+    pass
 
 
 if __name__ == '__main__':
