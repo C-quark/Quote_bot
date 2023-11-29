@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from config import bot_token, CHATS
 import io
 import textwrap
+import os
 import emoji
 
 bot = telebot.TeleBot(bot_token)
@@ -24,6 +25,7 @@ LINE_HEIGHT_NAME = 30
 LINE_HEIGHT_TEXT = 27
 INDENT = 20
 
+sticker_packs = []
 
 commands = '\n'.join([
         '/q - создать стикер из текста',
@@ -146,7 +148,10 @@ def del_sticker(message):
 @bot.message_handler(commands=['packs'])
 def send_packs(message):
     with open('sticker_packs.txt', 'r') as packs:
-        bot.send_message(message.chat.id, '\n'.join(packs))
+        if os.path.getsize('sticker_packs.txt') == 0:
+            bot.send_message(message.chat.id, 'Тут пусто, иди отсюда!')
+        else:
+            bot.send_message(message.chat.id, '\n'.join(packs))
 
 
 @bot.message_handler(commands=['new_pack'])
@@ -161,8 +166,10 @@ def new_name(message):
         pack_name = name + '_by_Quote_stick_bot'
         bot.create_new_sticker_set(user_id=549883953, name=pack_name, title='Цитаты', emojis=['\U00002712'], png_sticker='CAACAgIAAxkBAAECLLllZP3pitZmfcLkPaTqUuDDBQcMpwAClisAAmyCMEgrMpVOWbS9YTME')
         bot.send_message(message.chat.id, 'Стикерпак создан')
-        with open('sticker_packs.txt', 'a') as file:
-            file.write('https://t.me/addstickers/' + pack_name)
+        with open('sticker_packs.txt', 'w') as file:
+            link_name = 'https://t.me/addstickers/' + pack_name
+            sticker_packs.append(link_name)
+            file.write('\n'.join(sticker_packs))
     except ApiTelegramException as e:
         error_description = str(e)
         if 'sticker set name is already occupied' in error_description.lower():
@@ -175,7 +182,7 @@ def new_name(message):
 
 @bot.message_handler(commands=['del_pack'])
 def del_pack(message):
-    result = bot.send_message(message.chat.id, 'Какой из стикерпаков тебе вздумалось удалить?')
+    result = bot.send_message(message.chat.id, 'Какой из стикерпака тебе вздумалось удалить? Укажи имя без "by_Quote_stick_bot"')
     bot.register_next_step_handler(result, del_name)
 
 
@@ -185,9 +192,10 @@ def del_name(message):
         pack_name = name + '_by_Quote_stick_bot'
         bot.delete_sticker_set(pack_name)
         bot.send_message(message.chat.id, 'Стикерпак удален')
-        with open('sticker_packs.txt', 'r') as file: #TODO: исправить удаление файла
+        with open('sticker_packs.txt', 'w') as file:
             link_name = 'https://t.me/addstickers/' + pack_name
-            file.read().replace(link_name, '')
+            sticker_packs.remove(link_name)
+            file.write('\n'.join(sticker_packs))
     except ApiTelegramException:
         bot.send_message(message.chat.id, 'Не можешь правильно написать название стикерпака? У тебя лапки?')
     except Exception:
@@ -196,7 +204,20 @@ def del_name(message):
 
 @bot.message_handler(commands=['main_pack'])
 def main_pack(message):
-    pass
+    with open('sticker_packs.txt', 'r') as packs:
+        if os.path.getsize('sticker_packs.txt') == 0:
+            bot.send_message(message.chat.id, 'Тут пусто, иди отсюда!')
+        else:
+            bot.send_message(message.chat.id, 'Какой из данных стикерпаков сделать главным? Укажи имя без "by_Quote_stick_bot"')
+            result = bot.send_message(message.chat.id, '\n'.join(packs))
+            bot.register_next_step_handler(result, main_name)
+
+
+def main_name(message):
+    name = message.text
+    pack_name = name + '_by_Quote_stick_bot'
+    bot.set_chat_sticker_set(CHATS['CHAT'], pack_name)
+    bot.send_message(message.chat.id, 'Выбран главный стикерпак')
 
 
 if __name__ == '__main__':
