@@ -6,6 +6,7 @@ import io
 import textwrap
 import os
 import emoji
+#TODO добавить отображение стикеров
 
 bot = telebot.TeleBot(bot_token)
 
@@ -112,8 +113,9 @@ def send_sticker(message):
     draw.rounded_rectangle((AVATAR_WIGHT + INDENT, 0, STICKER_WIGHT, height_rr_name), radius=20, fill='#121212', corners=(20, 20, 0, 0), width=1) #302f2f, 191122, 141226, 000000, 121212, 121212, 0E294B, 23282B, 373252, 1A162A, 003038, 001B2E
     draw.text((AVATAR_WIGHT + INDENT * 2, 60), wrapped_text_fill, fill="#E0FFFF", font=font_text)
     draw.text((AVATAR_WIGHT + INDENT * 2, 10), wrapped_name_fill, fill="#AFEEEE", font=font_name)
-    while image.height > STICKER_HEIGHT: #TODO исправить высоту стикера
-        image = image.resize((STICKER_WIGHT - (LINE_HEIGHT_TEXT + INDENT + AVATAR_WIGHT), STICKER_HEIGHT - (LINE_HEIGHT_TEXT + INDENT)))
+    while image.height > STICKER_HEIGHT:
+        sticker_wight = round(STICKER_HEIGHT/(image.height/STICKER_WIGHT))
+        image = image.resize((sticker_wight, STICKER_HEIGHT))
     else:
         image.save('sticker.png')
     if message.reply_to_message:
@@ -189,7 +191,7 @@ def new_name(message):
 
 @bot.message_handler(commands=['del_pack'])
 def del_pack(message):
-    result = bot.send_message(message.chat.id, 'Какой из стикерпака тебе вздумалось удалить? Укажи имя без "by_Quote_stick_bot"')
+    result = bot.send_message(message.chat.id, 'Какой из стикерпака тебе вздумалось удалить? Укажи только имя без "https://t.me/addstickers/" и "by_Quote_stick_bot"')
     bot.register_next_step_handler(result, del_name)
 
 
@@ -215,7 +217,7 @@ def main_pack(message):
         if os.path.getsize('sticker_packs.txt') == 0:
             bot.send_message(message.chat.id, 'Тут пусто, иди отсюда!')
         else:
-            bot.send_message(message.chat.id, 'Какой из данных стикерпаков сделать главным? Укажи имя без "by_Quote_stick_bot"')
+            bot.send_message(message.chat.id, 'Какой из данных стикерпаков сделать главным? Укажи только имя без "https://t.me/addstickers/" и "by_Quote_stick_bot"')
             result = bot.send_message(message.chat.id, '\n'.join(packs))
             bot.register_next_step_handler(result, main_name)
 
@@ -230,7 +232,7 @@ def main_name(message):
                 name.write(pack_name)
                 bot.send_message(message.chat.id, 'Выбран главный стикерпак')
         else:
-            bot.send_message(message.chat.id, 'Четче попадай по буквам, мясной')
+            bot.send_message(message.chat.id, 'Чётче попадай по буквам, мясной')
 
 
 if __name__ == '__main__':
