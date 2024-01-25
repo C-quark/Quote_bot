@@ -10,8 +10,6 @@ import os
 
 
 bot = telebot.TeleBot(bot_token)
-
-
 CHATS = CHATS
 
 AVATAR_WIGHT = 100
@@ -95,23 +93,18 @@ def send_sticker(message):
             avatar = None
 
         if msg and hasattr(msg, 'forward_from') and msg.forward_from:
-            wrapped_name_fill = textwrap.fill(msg.forward_from.first_name, width=WIGHT_NAME_MAX)
-            wrapped_text_fill = textwrap.fill(text, width=WIGHT_TEXT_MAX)
-            wrapped_name_wrap = textwrap.wrap(msg.forward_from.first_name, width=WIGHT_NAME_MAX)
-            wrapped_text_wrap = textwrap.wrap(text, width=WIGHT_TEXT_MAX)
+            wrapped_msg = msg.forward_from.first_name
         elif msg and hasattr(msg, 'forward_sender_name') and msg.forward_sender_name:
-            wrapped_name_fill = textwrap.fill(msg.forward_sender_name, width=WIGHT_NAME_MAX)
-            wrapped_text_fill = textwrap.fill(text, width=WIGHT_TEXT_MAX)
-            wrapped_name_wrap = textwrap.wrap(msg.forward_sender_name, width=WIGHT_NAME_MAX)
-            wrapped_text_wrap = textwrap.wrap(text, width=WIGHT_TEXT_MAX)
+            wrapped_msg = msg.forward_sender_name
         elif msg and msg.from_user:
-            wrapped_name_fill = textwrap.fill(msg.from_user.first_name, width=WIGHT_NAME_MAX)
-            wrapped_text_fill = textwrap.fill(text, width=WIGHT_TEXT_MAX)
-            wrapped_name_wrap = textwrap.wrap(msg.from_user.first_name, width=WIGHT_NAME_MAX)
-            wrapped_text_wrap = textwrap.wrap(text, width=WIGHT_TEXT_MAX)
+            wrapped_msg = msg.from_user.first_name
         else:
             bot.reply_to(message, 'Не удалось сделать стикер')
             return
+        wrapped_name_fill = textwrap.fill(wrapped_msg, width=WIGHT_NAME_MAX)
+        wrapped_text_fill = textwrap.fill(text, width=WIGHT_TEXT_MAX)
+        wrapped_name_wrap = textwrap.wrap(wrapped_msg, width=WIGHT_NAME_MAX)
+        wrapped_text_wrap = textwrap.wrap(text, width=WIGHT_TEXT_MAX)
 
         height_rr_name = LINE_HEIGHT_NAME * len(wrapped_name_wrap) + INDENT
         height_rr_text = LINE_HEIGHT_TEXT * len(wrapped_text_wrap) + height_rr_name + INDENT
